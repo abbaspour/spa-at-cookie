@@ -1,0 +1,30 @@
+title SPA with ACG flow for access_token in httpOnly Cookie
+
+participant SPA as spa
+participant Backend as bff
+participant Auth0 as a0
+participant API as api
+
+spa -> +bff: IFRAME /login.php?format=silent
+
+bff -> bff: generate state & nonce
+bff -> bff: store state and nonce in user session
+bff -> +a0: 302 /authorize? { response_type=code, state=sss, prompt=none }
+
+a0 -> -bff: 302 /cb.php? {code=xxx, state=sss, format=silent}
+bff -> bff: compare state with session
+bff -> +a0: POST /token {code=xxx, client_id, client_secret}
+a0 --> -bff: access_token
+bff -> bff: validate nonce, at_hash
+note over bff: (Optional) encrypt access_token
+bff --> -spa: main.post(OK) + set-cookie { x_auth_token=access_token }
+
+spa -> spa: event.listen() { message=ok }
+spa -> spa: remove iframe
+
+spa -> +api: XHR /api.php { cookie access_token }
+api -> api: decrypt & verify access_token
+api --> -spa: payload
+
+spa->spa: setInterval(refresh(), expires)
+

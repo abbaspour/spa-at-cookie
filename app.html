@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>app</title>
+    <meta charset="utf-8">
+</head>
+<body>
+
+<script>
+    function make_api_call() {
+        fetch('api.php')
+            .then(data => data.json())
+            .then(value => document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(value) + '</pre>');
+    }
+
+    make_api_call();
+
+    window.addEventListener("message", function(event) {
+        let data = event.data || {};
+        let type = data.type || '';
+        if(type === 'authorization_response') {
+            const iframe = document.getElementById('silent_auth_iframe');
+            document.body.removeChild(iframe);
+            let response = data.response || {};
+            let error = response.error || '';
+
+            if(error === 'ok') {
+                console.log('refresh success');
+            } else {
+                console.log('refresh failed. need to login');
+            }
+        }
+    });
+
+    async function refresh() {
+        const iframe = document.createElement('iframe');
+        iframe.id='silent_auth_iframe';
+        iframe.src = 'login.php?format=silent';
+        iframe.width='0';
+        iframe.height='0';
+        iframe.tabindex="-1";
+        iframe.class="hidden";
+        document.body.appendChild(iframe);
+    }
+
+    function logout() {
+        window.location.href = 'logout.php';
+    }
+
+</script>
+
+Welcome to my app. <br/>
+API result: <div id='result'></div>
+
+<input type="submit" value="Logout" onclick="logout()"/>
+<input type="submit" value="Make API Call" onclick="make_api_call()"/>
+<input type="submit" value="Renew Access Token" onclick="refresh()"/>
+
+</body>
+</html>
